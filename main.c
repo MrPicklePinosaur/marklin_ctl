@@ -15,16 +15,19 @@ int kmain() {
 
   uart_puts(CONSOLE, hello);
 
-  unsigned int counter=1;
-  uart_printf(CONSOLE, "PI[%u]> ", counter++);
+  uint32_t timer_value = 0;
+
   char c = ' ';
-  while (c != 'q') {
+  while (1) {
+
+    timer_value = timer_getlow();
+
+    uart_printf(CONSOLE, "\r\nPI[%u]> ", timer_value);
+
     c = uart_getc(CONSOLE);
-    if (c == '\r') {
-      uart_printf(CONSOLE, "\r\nPI[%u]> ", counter++);
-    } else {
-      uart_putc(CONSOLE, c);
-    }
+
+    if (c == 'q') break;
+
   }
   uart_puts(CONSOLE, "\r\n");
 

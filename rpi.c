@@ -4,6 +4,23 @@
 
 static char* const  MMIO_BASE = (char*)           0xFE000000;
 
+/*********** TIMER CONFIGURATION ********************************/
+
+static char* const TIMER_BASE = (char*)(MMIO_BASE + 0x00003000);
+
+// Timer offsets
+static const uint32_t TIMER_CS  =   0x00; // status
+static const uint32_t TIMER_CLO =   0x04; // counter low
+static const uint32_t TIMER_CHI =   0x08; // counter high
+
+#define TIMER_REG(offset) (*(volatile uint32_t*)(TIMER_BASE + offset))
+
+uint32_t timer_getlow(void) {
+  uint32_t ch;
+  ch = TIMER_REG(TIMER_CLO);
+  return(ch);
+}
+
 /*********** GPIO CONFIGURATION ********************************/
 
 static char* const GPIO_BASE = (char*)(MMIO_BASE + 0x200000);
