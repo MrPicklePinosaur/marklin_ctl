@@ -3,6 +3,18 @@
 // Serial line 1 on the RPi hat is used for the console
 static const size_t CONSOLE = 1;
 
+// Formats system time into human readable string
+void fmt_time(uint64_t time) {
+  
+  unsigned int f_tenths = time % 1000000 / 10000;
+  unsigned int secs = time / 1000000;
+  unsigned int f_secs = secs % 60;
+  unsigned int f_min = secs / 60;
+
+  uart_printf(CONSOLE, "\r\nTIME %u:%u:%u> ", f_min, f_secs, f_tenths);
+
+}
+
 int kmain() {
   char hello[] = "=-=-=-=-= Hello world, this is iotest (" __TIME__ ") =-=-=-=-=\r\nPress 'q' to reboot\r\n";
 
@@ -15,14 +27,15 @@ int kmain() {
 
   uart_puts(CONSOLE, hello);
 
-  uint32_t timer_value = 0;
+  uint64_t timer_value = 0;
 
   char c = ' ';
   while (1) {
 
-    timer_value = timer_getlow();
+    timer_value = timer_get();
 
-    uart_printf(CONSOLE, "\r\nPI[%u]> ", timer_value);
+   uart_printf(CONSOLE, "\r\nPI[%u]> ", timer_value);
+    fmt_time(timer_value);
 
     c = uart_getc(CONSOLE);
 

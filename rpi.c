@@ -15,10 +15,11 @@ static const uint32_t TIMER_CHI =   0x08; // counter high
 
 #define TIMER_REG(offset) (*(volatile uint32_t*)(TIMER_BASE + offset))
 
-uint32_t timer_getlow(void) {
-  uint32_t ch;
-  ch = TIMER_REG(TIMER_CLO);
-  return(ch);
+uint64_t timer_get(void) {
+  uint64_t time;
+  time = TIMER_REG(TIMER_CLO);
+  time |= (uint64_t)TIMER_REG(TIMER_CHI) << 32;
+  return(time);
 }
 
 /*********** GPIO CONFIGURATION ********************************/

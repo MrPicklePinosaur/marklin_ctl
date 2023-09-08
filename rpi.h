@@ -13,6 +13,6 @@ void uart_printf(size_t line, char *fmt, ...);
 void uart_config_and_enable(size_t line, uint32_t baudrate);
 void uart_init();
 
-uint32_t timer_getlow(void);
+uint64_t timer_get(void);
 
 #endif /* rpi.h */
