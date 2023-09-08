@@ -146,6 +146,17 @@ unsigned char uart_getc(size_t line) {
   return(ch);
 }
 
+// Poll for input, returns 0 if no input present
+unsigned char uart_getc_poll(size_t line) {
+
+  // return immediately if no data
+  if ( ! UART_FR_RXFE ) return (0);
+
+  unsigned char ch;
+  ch = UART_REG(line, UART_DR);
+  return(ch);
+}
+
 void uart_putc(size_t line, unsigned char c) {
   // make sure there is room to write more data
   while(UART_REG(line, UART_FR) & UART_FR_TXFF);

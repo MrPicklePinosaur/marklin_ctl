@@ -3,6 +3,13 @@
 
 #include <stddef.h>
 
+// ansi codes
+#define ANSI_CLEAR "\033[2J"
+#define ANSI_HIDE "\033[?25l"
+#define ANSI_ORIGIN "\033[H"
+#define ANSI_MOVE(r, c) "\033[" r ";" c "H"
+#define ANSI_CLEAR_LINE "\033[K"
+
 // conversions
 int a2d(char ch);
 char a2i( char ch, char **src, int base, int *nump );

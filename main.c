@@ -1,4 +1,5 @@
 #include "rpi.h"
+#include "util.h"
 
 // Serial line 1 on the RPi hat is used for the console
 static const size_t CONSOLE = 1;
@@ -29,16 +30,19 @@ int kmain() {
 
   uint64_t timer_value = 0;
 
-  char c = ' ';
+  char c = 0;
   while (1) {
+
+    // clear screen
+    uart_printf(CONSOLE, "%s", ANSI_CLEAR);
+    uart_printf(CONSOLE, "%s", ANSI_ORIGIN);
 
     timer_value = timer_get();
 
-   uart_printf(CONSOLE, "\r\nPI[%u]> ", timer_value);
+    uart_printf(CONSOLE, "\r\nPI[%u]> ", timer_value);
     fmt_time(timer_value);
 
-    c = uart_getc(CONSOLE);
-
+    c = uart_getc_poll(CONSOLE);
     if (c == 'q') break;
 
   }
