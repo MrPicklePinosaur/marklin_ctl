@@ -1,6 +1,9 @@
+#include <ctype.h>
+
 #include "rpi.h"
 #include "util.h"
 #include "marklin.h"
+#include "readline.h"
 
 // Serial line 1 on the RPi hat is used for the console
 static const size_t CONSOLE = 1;
@@ -20,6 +23,7 @@ void fmt_time(uint64_t time) {
 
 }
 
+
 int kmain() {
 
   // initialize both console and marklin uarts
@@ -38,6 +42,8 @@ int kmain() {
 
   uint64_t timer_value = 0;
 
+  Readline readline = readline_new();
+
   char c = 0;
   while (1) {
 
@@ -48,18 +54,37 @@ int kmain() {
 
     fmt_time(timer_value);
 
-    /* c = uart_getc_poll(CONSOLE); */
     c = uart_getc(CONSOLE);
-    if (c == 'q') break;
-    if (c == 's') {
-      uint32_t train = 1;
-      uint32_t speed = 1;
-      marklin_train_ctl(train, speed);
-      uart_printf(CONSOLE, "\r\ntrain %u at speed %u", train, speed);
+    /* c = uart_getc_poll(CONSOLE); */
+
+    /* if (c == 'q') break; */
+    /* else if (c == 's') { */
+    /*   uint32_t train = 1; */
+    /*   uint32_t speed = 1; */
+    /*   marklin_train_ctl(train, speed); */
+    /*   uart_printf(CONSOLE, "\r\ntrain %u at speed %u", train, speed); */
+    /* } */
+
+    uart_printf(CONSOLE, "\r\ngot character %d", c);
+
+    if (isalnum(c)) {
+      readline_pushc(&readline, c);
+    }
+    else if (c == 0x0d) {
+      // enter is pressed
+      readline_clear(&readline);
+
+      break;
+    }
+    else if (c == 0x08) {
+      // backspace is pressed
+
     }
 
+    uart_printf(CONSOLE, "\r\n%s", readline_data(&readline));
+
     // waste some time
-    /* for (unsigned int i = 0; i < 1000; ++i) {} */
+    for (unsigned int i = 0; i < 1000; ++i) {}
 
   }
 
