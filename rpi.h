@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include <stddef.h>
 
+// Serial line 1 on the RPi hat is used for the console
+static const size_t CONSOLE = 1;
+
+// Serial line 2 is the train control
+static const size_t MARKLIN = 2;
 
 void uart_putc(size_t line, unsigned char c);
 unsigned char uart_getc(size_t line);

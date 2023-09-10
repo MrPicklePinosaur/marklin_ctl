@@ -3,13 +3,8 @@
 #include "rpi.h"
 #include "util.h"
 #include "marklin.h"
+#include "parser.h"
 #include "string.h"
-
-// Serial line 1 on the RPi hat is used for the console
-static const size_t CONSOLE = 1;
-
-// Serial line 2 is the train control
-static const size_t MARKLIN = 2;
 
 // Formats system time into human readable string
 void fmt_time(uint64_t time) {
@@ -67,13 +62,21 @@ int kmain() {
 
     /* uart_printf(CONSOLE, "\r\ngot character %d", c); */
 
-    if (isalnum(c)) {
+    if (isalnum(c) || isblank(c)) {
       string_pushc(&line, c);
     }
     else if (c == 0x0d) {
       // enter is pressed
 
       // parse the line
+      ParserResult parser_result = parse_command(string_data(&line));
+
+      if (parser_result._type == PARSER_RESULT_TRAIN_SPEED) {
+        uint32_t train = parser_result._data.train_speed.train;
+        uint32_t speed = parser_result._data.train_speed.speed;
+        marklin_train_ctl(train, speed);
+        uart_printf(CONSOLE, "\r\nsending command for train %u at speed %u", train, speed);
+      }
 
       string_clear(&line);
 

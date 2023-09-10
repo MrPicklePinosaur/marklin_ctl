@@ -4,8 +4,6 @@
 static const uint8_t SPEED_STOP     = 0x0;
 static const uint8_t SPEED_REVERSE  = 0xF;
 
-static const size_t MARKLIN = 2;
-
 // Read the state of all the detectors on the track
 /*
 uint32_t s88_get(void) {

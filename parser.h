@@ -5,10 +5,11 @@
 
 typedef struct {
   enum {
-    TRAIN_SPEED,
-    REVERSE,
-    SWITCH,
-    QUIT,
+    PARSER_RESULT_TRAIN_SPEED,
+    PARSER_RESULT_REVERSE,
+    PARSER_RESULT_SWITCH,
+    PARSER_RESULT_QUIT,
+    PARSER_RESULT_ERROR,
   } _type;
 
   union {
@@ -24,6 +25,6 @@ typedef struct {
   } _data;
 } ParserResult;
 
-void parse_command(const char* command);
+ParserResult parse_command(const char* command);
 
 #endif // __PARSER_H__
