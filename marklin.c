@@ -1,9 +1,6 @@
 #include "marklin.h"
 #include "rpi.h"
 
-static const uint8_t SPEED_STOP     = 0x0;
-static const uint8_t SPEED_REVERSE  = 0xF;
-
 // Read the state of all the detectors on the track
 /*
 uint32_t s88_get(void) {

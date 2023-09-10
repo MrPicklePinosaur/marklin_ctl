@@ -6,6 +6,8 @@
 #include "parser.h"
 #include "string.h"
 
+#define NUMBER_OF_TRAINS 80
+
 // Formats system time into human readable string
 void fmt_time(uint64_t time) {
   
@@ -20,6 +22,9 @@ void fmt_time(uint64_t time) {
 
 
 int kmain() {
+
+  // used to track speed of each train
+  uint32_t train_state[NUMBER_OF_TRAINS] = {0};
 
   // initialize both console and marklin uarts
   uart_init();
@@ -75,7 +80,28 @@ int kmain() {
         uint32_t train = parser_result._data.train_speed.train;
         uint32_t speed = parser_result._data.train_speed.speed;
         marklin_train_ctl(train, speed);
+        train_state[train] = speed;
         uart_printf(CONSOLE, "\r\nsending command for train %u at speed %u", train, speed);
+      }
+      else if (parser_result._type == PARSER_RESULT_REVERSE) {
+        uint32_t train = parser_result._data.reverse.train;
+
+        uint32_t cur_speed = train_state[train];
+
+        marklin_train_ctl(train, SPEED_STOP);
+        uart_printf(CONSOLE, "\r\nstopped..");
+
+        for (unsigned int i = 0; i < 10000000; ++i) {}
+
+        marklin_train_ctl(train, SPEED_REVERSE);
+        uart_printf(CONSOLE, "\r\nreversed..");
+
+        for (unsigned int i = 0; i < 10000000; ++i) {}
+
+        marklin_train_ctl(train, cur_speed);
+        uart_printf(CONSOLE, "\r\nstarted..");
+
+        uart_printf(CONSOLE, "\r\nreversing direction for train %u", train);
       }
 
       string_clear(&line);

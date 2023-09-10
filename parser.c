@@ -44,6 +44,24 @@ parse_command(const char* command)
     return res;
 
   }
+  else if (strcmp(string_data(&cmd_name), "rv") == 0) {
+
+    eat_whitespace(command, &it);
+
+    int train = get_number(command, &it);
+
+    uart_printf(CONSOLE, "\r\ngot rv command train = %d", train);
+
+    ParserResult res = {
+      ._type = PARSER_RESULT_REVERSE,
+      ._data = {
+        .reverse = {
+          .train = train,
+        }
+      }
+    };
+    return res;
+  }
 
   ParserResult res = {
     ._type = PARSER_RESULT_ERROR,
