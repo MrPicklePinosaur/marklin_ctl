@@ -1,8 +1,12 @@
 #include "rpi.h"
 #include "util.h"
+#include "marklin.h"
 
 // Serial line 1 on the RPi hat is used for the console
 static const size_t CONSOLE = 1;
+
+// Serial line 2 is the train control
+static const size_t MARKLIN = 2;
 
 // Formats system time into human readable string
 void fmt_time(uint64_t time) {
@@ -17,16 +21,20 @@ void fmt_time(uint64_t time) {
 }
 
 int kmain() {
-  char hello[] = "=-=-=-=-= Hello world, this is iotest (" __TIME__ ") =-=-=-=-=\r\nPress 'q' to reboot\r\n";
 
   // initialize both console and marklin uarts
   uart_init();
 
   // not strictly necessary, since line 1 is configured during boot
   // but we'll configure the line anyways, so we know what state it is in
-  uart_config_and_enable(CONSOLE, 115200);
+  // set the line control registers: 8 bit, no parity, 1 stop bit, FIFOs enabled
+  // UART_LCRH_WLEN_HIGH | UART_LCRH_WLEN_LOW | UART_LCRH_FEN
 
-  uart_puts(CONSOLE, hello);
+  uart_config_and_enable(CONSOLE, 115200, 0x70);
+
+  // set the line control registers: 8 bit, no parity, 2 stop bit, FIFOs enabled
+  // UART_LCRH_WLEN_HIGH | UART_LCRH_WLEN_LOW | UART_LCRH_FEN | UART_LCRH_STP2
+  uart_config_and_enable(MARKLIN, 2400, 0x78);
 
   uint64_t timer_value = 0;
 
@@ -34,19 +42,26 @@ int kmain() {
   while (1) {
 
     // clear screen
-    uart_printf(CONSOLE, "%s", ANSI_CLEAR);
-    uart_printf(CONSOLE, "%s", ANSI_ORIGIN);
+    /* uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN); */
 
     timer_value = timer_get();
 
-    uart_printf(CONSOLE, "\r\nPI[%u]> ", timer_value);
     fmt_time(timer_value);
 
-    c = uart_getc_poll(CONSOLE);
+    /* c = uart_getc_poll(CONSOLE); */
+    c = uart_getc(CONSOLE);
     if (c == 'q') break;
+    if (c == 's') {
+      uint32_t train = 1;
+      uint32_t speed = 1;
+      marklin_train_ctl(train, speed);
+      uart_printf(CONSOLE, "\r\ntrain %u at speed %u", train, speed);
+    }
+
+    // waste some time
+    /* for (unsigned int i = 0; i < 1000; ++i) {} */
 
   }
-  uart_puts(CONSOLE, "\r\n");
 
   // U-Boot displays the return value from main - might be handy for debugging
   return 0;

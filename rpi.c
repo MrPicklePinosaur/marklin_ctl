@@ -120,7 +120,7 @@ static const uint32_t UARTCLK = 48000000;
 
 // Configure the line properties (e.g, parity, baud rate) of a UART
 // and ensure that it is enabled
-void uart_config_and_enable(size_t line, uint32_t baudrate) {
+void uart_config_and_enable(size_t line, uint32_t baudrate, uint32_t control) {
   uint32_t cr_state;
   // to avoid floating point, this computes 64 times the required baud divisor
   uint32_t baud_divisor = (uint32_t)((((uint64_t)UARTCLK)*4)/baudrate);
@@ -128,8 +128,10 @@ void uart_config_and_enable(size_t line, uint32_t baudrate) {
   // line control registers should not be changed while the UART is enabled, so disable it
   cr_state = UART_REG(line, UART_CR);
   UART_REG(line, UART_CR) = cr_state & ~UART_CR_UARTEN;
+
   // set the line control registers: 8 bit, no parity, 1 stop bit, FIFOs enabled
-  UART_REG(line, UART_LCRH) = UART_LCRH_WLEN_HIGH | UART_LCRH_WLEN_LOW | UART_LCRH_FEN;
+  UART_REG(line, UART_LCRH) = control;
+
   // set the baud rate
   UART_REG(line, UART_IBRD) = baud_divisor >> 6;
   UART_REG(line, UART_FBRD) = baud_divisor & 0x3f;
