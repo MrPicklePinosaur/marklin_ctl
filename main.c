@@ -3,7 +3,7 @@
 #include "rpi.h"
 #include "util.h"
 #include "marklin.h"
-#include "readline.h"
+#include "string.h"
 
 // Serial line 1 on the RPi hat is used for the console
 static const size_t CONSOLE = 1;
@@ -42,7 +42,7 @@ int kmain() {
 
   uint64_t timer_value = 0;
 
-  Readline readline = readline_new();
+  String line = string_new();
 
   char c = 0;
   while (1) {
@@ -65,23 +65,25 @@ int kmain() {
     /*   uart_printf(CONSOLE, "\r\ntrain %u at speed %u", train, speed); */
     /* } */
 
-    uart_printf(CONSOLE, "\r\ngot character %d", c);
+    /* uart_printf(CONSOLE, "\r\ngot character %d", c); */
 
     if (isalnum(c)) {
-      readline_pushc(&readline, c);
+      string_pushc(&line, c);
     }
     else if (c == 0x0d) {
       // enter is pressed
-      readline_clear(&readline);
 
-      break;
+      // parse the line
+
+      string_clear(&line);
+
     }
     else if (c == 0x08) {
       // backspace is pressed
-
+      string_popc(&line);
     }
 
-    uart_printf(CONSOLE, "\r\n%s", readline_data(&readline));
+    uart_printf(CONSOLE, "\r\n%s", string_data(&line));
 
     // waste some time
     for (unsigned int i = 0; i < 1000; ++i) {}
