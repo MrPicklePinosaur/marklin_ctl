@@ -103,6 +103,13 @@ int kmain() {
 
         uart_printf(CONSOLE, "\r\nreversing direction for train %u", train);
       }
+      else if (parser_result._type == PARSER_RESULT_QUIT) {
+        uart_printf(CONSOLE, "\r\nexiting... goodbye!");
+        break;
+      }
+      else {
+        uart_printf(CONSOLE, "\r\ninvalid command");
+      }
 
       string_clear(&line);
 

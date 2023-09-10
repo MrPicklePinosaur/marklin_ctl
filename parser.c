@@ -62,6 +62,16 @@ parse_command(const char* command)
     };
     return res;
   }
+  else if (strcmp(string_data(&cmd_name), "q") == 0) {
+
+    uart_printf(CONSOLE, "\r\ngot quit command");
+
+    ParserResult res = {
+      ._type = PARSER_RESULT_QUIT,
+      ._data = {}
+    };
+    return res;
+  }
 
   ParserResult res = {
     ._type = PARSER_RESULT_ERROR,
