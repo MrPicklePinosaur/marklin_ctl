@@ -47,23 +47,15 @@ int kmain() {
   char c = 0;
   while (1) {
 
-    // clear screen
-    /* uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN); */
-
     timer_value = timer_get();
 
     fmt_time(timer_value);
 
-    c = uart_getc(CONSOLE);
-    /* c = uart_getc_poll(CONSOLE); */
+    // poll switches
+    marklin_dump_s88();
 
-    /* if (c == 'q') break; */
-    /* else if (c == 's') { */
-    /*   uint32_t train = 1; */
-    /*   uint32_t speed = 1; */
-    /*   marklin_train_ctl(train, speed); */
-    /*   uart_printf(CONSOLE, "\r\ntrain %u at speed %u", train, speed); */
-    /* } */
+    /* c = uart_getc(CONSOLE); */
+    c = uart_getc_poll(CONSOLE);
 
     /* uart_printf(CONSOLE, "\r\ngot character %d", c); */
 
@@ -119,10 +111,14 @@ int kmain() {
       string_popc(&line);
     }
 
-    uart_printf(CONSOLE, "\r\n%s", string_data(&line));
+    uart_printf(CONSOLE, "\r\nmarklin> %s", string_data(&line));
 
-    // waste some time
+    uart_printf(CONSOLE, "\r\n");
+
     for (unsigned int i = 0; i < 1000; ++i) {}
+
+    // clear screen
+    uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN);
 
   }
 

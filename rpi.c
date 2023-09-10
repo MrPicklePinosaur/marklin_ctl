@@ -152,7 +152,7 @@ unsigned char uart_getc(size_t line) {
 unsigned char uart_getc_poll(size_t line) {
 
   // return immediately if no data
-  if ( ! UART_FR_RXFE ) return (0);
+  if (UART_REG(line, UART_FR) & UART_FR_RXFE) return (0);
 
   unsigned char ch;
   ch = UART_REG(line, UART_DR);
