@@ -15,6 +15,8 @@ typedef struct {
 } CBuf;
 
 CBuf cbuf_new(void);
+uint8_t cbuf_front(CBuf* cbuf);
+uint8_t cbuf_back(CBuf* cbuf);
 int cbuf_push(CBuf* cbuf, uint8_t byte);
 uint8_t cbuf_pop(CBuf* cbuf);
 uint32_t cbuf_len(CBuf* cbuf);

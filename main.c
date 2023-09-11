@@ -5,6 +5,7 @@
 #include "marklin.h"
 #include "parser.h"
 #include "string.h"
+#include "cbuf.h"
 
 #define NUMBER_OF_TRAINS 80
 
@@ -72,6 +73,8 @@ int kmain() {
   uint32_t sensor_log_length = 0; // number of lines of sensor log text we have printed out
   uint32_t sensor_bytes_expecting = 0; // number of bytes we are expecting to read from sensors
 
+  CBuf out_stream = cbuf_new();
+
   while (1) {
 
     timer_value = timer_get();
@@ -82,12 +85,6 @@ int kmain() {
       fmt_time(timer_value);
     }
 
-    // poll switches
-    if (timer_value - timer_events.sensor > 10000 && sensor_bytes_expecting == 0) {
-      timer_events.sensor = timer_value;
-      marklin_dump_s88();
-      sensor_bytes_expecting = 10; // 5 sensors with 2 bytes each
-    }
 
     // check if terminal has a byte
     unsigned char c = 0;
@@ -133,7 +130,7 @@ int kmain() {
       if (parser_result._type == PARSER_RESULT_TRAIN_SPEED) {
         uint32_t train = parser_result._data.train_speed.train;
         uint32_t speed = parser_result._data.train_speed.speed;
-        marklin_train_ctl(train, speed);
+        marklin_train_ctl(&out_stream, train, speed);
         train_state[train] = speed;
         uart_printf(CONSOLE, "sending command for train %u at speed %u", train, speed);
         ++cmd_log_length;
@@ -143,15 +140,15 @@ int kmain() {
 
         uint32_t cur_speed = train_state[train];
 
-        marklin_train_ctl(train, SPEED_STOP);
+        marklin_train_ctl(&out_stream, train, SPEED_STOP);
 
         for (unsigned int i = 0; i < 10000000; ++i) {}
 
-        marklin_train_ctl(train, SPEED_REVERSE);
+        marklin_train_ctl(&out_stream, train, SPEED_REVERSE);
 
         for (unsigned int i = 0; i < 10000000; ++i) {}
 
-        marklin_train_ctl(train, cur_speed);
+        marklin_train_ctl(&out_stream, train, cur_speed);
 
         uart_printf(CONSOLE, "reversing direction for train %u", train);
         ++cmd_log_length;
@@ -179,6 +176,21 @@ int kmain() {
       uart_printf(CONSOLE, "%s%s", ANSI_MOVE("2", "0"), ANSI_CLEAR_LINE);
       uart_printf(CONSOLE, "marklin> %s", string_data(&line));
       line_changed = false;
+    }
+
+    uart_printf(CONSOLE, "\033[30;0H\033[K cbuf len %u", cbuf_len(&out_stream));
+
+    // write to MARKLIN if we can
+    if (cbuf_len(&out_stream) > 0) {
+      uint8_t byte = cbuf_front(&out_stream);
+      if (uart_try_putc(MARKLIN, byte) == 0) cbuf_pop(&out_stream);
+    }
+
+    // poll switches
+    if (timer_value - timer_events.sensor > 10000 && sensor_bytes_expecting == 0) {
+      timer_events.sensor = timer_value;
+      marklin_dump_s88(&out_stream);
+      sensor_bytes_expecting = 10; // 5 sensors with 2 bytes each
     }
 
   }

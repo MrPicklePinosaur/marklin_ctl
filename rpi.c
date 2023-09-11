@@ -165,6 +165,13 @@ void uart_putc(size_t line, unsigned char c) {
   UART_REG(line, UART_DR) = c;
 }
 
+// Return status 1 if byte was not written, 0 is successfully written
+int uart_try_putc(size_t line, unsigned char c) {
+  if (UART_REG(line, UART_FR) & UART_FR_TXFF) return (1);
+  UART_REG(line, UART_DR) = c;
+  return (0);
+}
+
 void uart_putl(size_t line, const char* buf, size_t blen) {
   uint32_t i;
   for(i=0; i < blen; i++) {

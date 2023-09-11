@@ -11,6 +11,7 @@ static const size_t CONSOLE = 1;
 static const size_t MARKLIN = 2;
 
 void uart_putc(size_t line, unsigned char c);
+int uart_try_putc(size_t line, unsigned char c);
 unsigned char uart_getc(size_t line);
 int uart_getc_poll(size_t line, unsigned char* data);
 void uart_putl(size_t line, const char *buf, size_t blen);
