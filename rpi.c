@@ -148,15 +148,15 @@ unsigned char uart_getc(size_t line) {
   return(ch);
 }
 
-// Poll for input, returns 0 if no input present
-unsigned char uart_getc_poll(size_t line) {
+// Poll for input, return status is 1 if no data, 0 if data
+int
+uart_getc_poll(size_t line, unsigned char* data) {
 
   // return immediately if no data
-  if (UART_REG(line, UART_FR) & UART_FR_RXFE) return (0);
+  if (UART_REG(line, UART_FR) & UART_FR_RXFE) return (1);
 
-  unsigned char ch;
-  ch = UART_REG(line, UART_DR);
-  return(ch);
+  *data = UART_REG(line, UART_DR);
+  return(0);
 }
 
 void uart_putc(size_t line, unsigned char c) {

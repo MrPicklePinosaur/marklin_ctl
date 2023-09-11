@@ -20,15 +20,16 @@ void marklin_train_ctl(uint32_t train, uint32_t speed) {
 
 void marklin_dump_s88(void) {
   // dump all 5 s88 decoders
-  /* uart_putc(MARKLIN, (unsigned char)128+5); */
+  uart_putc(MARKLIN, (unsigned char)128+5);
 
-  uart_putc(MARKLIN, (unsigned char)192+1);
-  unsigned char left = uart_getc(MARKLIN);
-  unsigned char right = uart_getc(MARKLIN);
-
-  /* uart_printf(CONSOLE, "\r\npolled %u %u", left, right); */
+  /* uart_putc(MARKLIN, (unsigned char)192+1); */
 
   for (unsigned int i = 0; i < 500; ++i) {}
+
+  /* unsigned char left = uart_getc(MARKLIN); */
+  /* unsigned char right = uart_getc(MARKLIN); */
+
+  /* uart_printf(CONSOLE, "\033[20;0H\033[K polled %u %u", left, right); */
 
 }
 
