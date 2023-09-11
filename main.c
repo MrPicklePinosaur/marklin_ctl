@@ -27,6 +27,8 @@ typedef struct {
   uint32_t timer;
   // Last time the state of the sensors were dumped
   uint32_t sensor;
+  uint32_t write;
+  uint32_t read;
 } TimerEvents;
 
 TimerEvents
@@ -35,6 +37,8 @@ timerevents_new(void)
   TimerEvents timer_events = {
     .timer = 0,
     .sensor = 0,
+    .write = 0,
+    .read = 0,
   };
   return timer_events;
 }
@@ -85,13 +89,21 @@ int kmain() {
       fmt_time(timer_value);
     }
 
+    // poll switches
+    if (timer_value - timer_events.sensor > 1000000 && sensor_bytes_expecting == 0) {
+      timer_events.sensor = timer_value;
+      marklin_dump_s88(&out_stream);
+      sensor_bytes_expecting = 10; // 5 sensors with 2 bytes each
+    }
 
     // check if terminal has a byte
     unsigned char c = 0;
     uart_getc_poll(CONSOLE, &c);
 
     // check if sensors has a byte
-    if (sensor_bytes_expecting > 0) {
+    if (timer_value - timer_events.read > 100000 && sensor_bytes_expecting > 0) {
+      timer_events.read = timer_value;
+
       unsigned char sensor_byte = 0;
       // if we had data
       if (uart_getc_poll(MARKLIN, &sensor_byte) == 0) {
@@ -178,20 +190,18 @@ int kmain() {
       line_changed = false;
     }
 
-    uart_printf(CONSOLE, "\033[30;0H\033[K cbuf len %u", cbuf_len(&out_stream));
+    /* uart_printf(CONSOLE, "\033[30;0H\033[K cbuf len %u", cbuf_len(&out_stream)); */
 
     // write to MARKLIN if we can
-    if (cbuf_len(&out_stream) > 0) {
-      uint8_t byte = cbuf_front(&out_stream);
-      if (uart_try_putc(MARKLIN, byte) == 0) cbuf_pop(&out_stream);
+    if (timer_value - timer_events.write > 1000) {
+      timer_events.write = timer_value;
+      if (cbuf_len(&out_stream) > 0) {
+        uint8_t byte = cbuf_front(&out_stream);
+        if (uart_try_putc(MARKLIN, byte) == 0) cbuf_pop(&out_stream);
+      }
     }
 
-    // poll switches
-    if (timer_value - timer_events.sensor > 10000 && sensor_bytes_expecting == 0) {
-      timer_events.sensor = timer_value;
-      marklin_dump_s88(&out_stream);
-      sensor_bytes_expecting = 10; // 5 sensors with 2 bytes each
-    }
+
 
   }
 

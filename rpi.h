@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 // Serial line 1 on the RPi hat is used for the console
 static const size_t CONSOLE = 1;
@@ -19,6 +20,7 @@ void uart_puts(size_t line, const char *buf);
 void uart_printf(size_t line, char *fmt, ...);
 void uart_config_and_enable(size_t line, uint32_t baudrate, uint32_t control);
 void uart_init();
+bool uart_busy(size_t line);
 
 uint64_t timer_get(void);
 

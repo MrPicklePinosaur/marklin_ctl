@@ -186,6 +186,10 @@ void uart_puts(size_t line, const char* buf) {
   }
 }
 
+bool uart_busy(size_t line) {
+  return UART_REG(line, UART_FR) & UART_FR_TXFF;
+}
+
 // printf-style printing, with limited format support
 static void uart_format_print (size_t line, char *fmt, va_list va ) {
 	char bf[12];
