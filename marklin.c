@@ -31,3 +31,29 @@ void marklin_dump_s88(void) {
   for (unsigned int i = 0; i < 500; ++i) {}
 
 }
+
+SwitchTable
+switchtable_new(void)
+{
+  SwitchTable switch_table = {
+    ._data = {0},
+    ._prev_data = {0},
+  };
+  return switch_table;
+}
+
+bool
+switchtable_test(SwitchTable* switch_table, SwitchGroup group, uint8_t num)
+{
+  // TODO double check that num is [1,16]
+  return ((switch_table->_data[group-1]) >> num) == 0x1;
+}
+
+// Update the data for a single group
+void
+switchtable_write(SwitchTable* switch_table, SwitchGroup group, uint16_t data)
+{
+  switch_table->_prev_data[group] = switch_table->_data[group];
+  switch_table->_data[group] = data;
+}
+
