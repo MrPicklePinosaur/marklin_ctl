@@ -19,13 +19,13 @@ typedef enum {
 } SwitchGroup;
 
 typedef struct {
-  uint16_t _data[5];
+  uint8_t _data[10];
   // data from last update (used to track when state of switches has changed)
-  uint16_t _prev_data[5];
+  uint8_t _prev_data[10];
 } SwitchTable;
 
 SwitchTable switchtable_new(void);
-bool switchtable_test(SwitchTable* switch_table, SwitchGroup group, uint8_t num);
-void switchtable_write(SwitchTable* switch_table, SwitchGroup group, uint16_t data);
+/* bool switchtable_test(SwitchTable* switch_table, SwitchGroup group, uint8_t num); */
+uint8_t switchtable_write(SwitchTable* switch_table, uint32_t index, uint8_t data);
 
 #endif // __MARKLIN_H__

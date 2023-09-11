@@ -43,18 +43,20 @@ switchtable_new(void)
   return switch_table;
 }
 
-bool
-switchtable_test(SwitchTable* switch_table, SwitchGroup group, uint8_t num)
-{
-  // TODO double check that num is [1,16]
-  return ((switch_table->_data[group-1]) >> num) == 0x1;
-}
+/* bool */
+/* switchtable_test(SwitchTable* switch_table, SwitchGroup group, uint8_t num) */
+/* { */
+/*   // TODO double check that num is [1,16] */
+/*   return ((switch_table->_data[group-1]) >> num) == 0x1; */
+/* } */
 
-// Update the data for a single group
-void
-switchtable_write(SwitchTable* switch_table, SwitchGroup group, uint16_t data)
+// Update the data for a single group (block of 8 sensors), also returns the newly triggered sensors
+uint8_t
+switchtable_write(SwitchTable* switch_table, uint32_t index, uint8_t data)
 {
-  switch_table->_prev_data[group] = switch_table->_data[group];
-  switch_table->_data[group] = data;
+  switch_table->_prev_data[index] = switch_table->_data[index];
+  switch_table->_data[index] = data;
+
+  return ~(switch_table->_prev_data[index]) & switch_table->_data[index];
 }
 
