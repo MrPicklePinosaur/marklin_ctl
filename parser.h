@@ -2,6 +2,7 @@
 #define __PARSER_H__
 
 #include <stdint.h>
+#include "marklin.h"
 
 typedef struct {
   enum {
@@ -21,6 +22,11 @@ typedef struct {
     struct {
       uint32_t train;
     } reverse;
+
+    struct {
+      uint32_t switch_id;
+      SwitchMode switch_mode;
+    } switch_control;
 
   } _data;
 } ParserResult;

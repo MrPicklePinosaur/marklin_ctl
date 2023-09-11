@@ -8,9 +8,6 @@
 static const uint8_t SPEED_STOP     = 0x0;
 static const uint8_t SPEED_REVERSE  = 0xF;
 
-void marklin_train_ctl(CBuf* out_stream, uint32_t train, uint32_t speed);
-void marklin_dump_s88(CBuf* out_stream);
-
 typedef enum {
   SWITCH_GROUP_A = 0,
   SWITCH_GROUP_B,
@@ -18,6 +15,15 @@ typedef enum {
   SWITCH_GROUP_D,
   SWITCH_GROUP_E,
 } SwitchGroup;
+
+typedef enum {
+  SWITCH_MODE_STRAIGHT = 33,
+  SWITCH_MODE_CURVED = 34,
+} SwitchMode;
+
+void marklin_train_ctl(CBuf* out_stream, uint32_t train, uint32_t speed);
+void marklin_switch_ctl(CBuf* out_stream, uint32_t switch_id, SwitchMode mode);
+void marklin_dump_s88(CBuf* out_stream);
 
 typedef struct {
   uint8_t _data[10];

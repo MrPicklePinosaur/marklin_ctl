@@ -17,7 +17,7 @@ void fmt_time(uint64_t time) {
   unsigned int f_secs = secs % 60;
   unsigned int f_min = secs / 60;
 
-  uart_printf(CONSOLE, "%sTIME %u:%u:%u ", ANSI_MOVE("0", "0"), f_min, f_secs, f_tenths);
+  uart_printf(CONSOLE, "%sTIME [%u] %u:%u:%u ", ANSI_MOVE("0", "0"), time, f_min, f_secs, f_tenths);
 
 }
 
@@ -163,6 +163,15 @@ int kmain() {
         marklin_train_ctl(&out_stream, train, cur_speed);
 
         uart_printf(CONSOLE, "reversing direction for train %u", train);
+        ++cmd_log_length;
+      }
+      else if (parser_result._type == PARSER_RESULT_SWITCH) {
+        uint32_t switch_id = parser_result._data.switch_control.switch_id;
+        SwitchMode switch_mode = parser_result._data.switch_control.switch_mode;
+
+        marklin_switch_ctl(&out_stream, switch_id, switch_mode);
+
+        uart_printf(CONSOLE, "setting switch %u to mode %u", switch_id, switch_mode);
         ++cmd_log_length;
       }
       else if (parser_result._type == PARSER_RESULT_QUIT) {

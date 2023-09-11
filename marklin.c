@@ -18,6 +18,15 @@ void marklin_train_ctl(CBuf* out_stream, uint32_t train, uint32_t speed) {
   for (unsigned int i = 0; i < 500; ++i) {}
 }
 
+void marklin_switch_ctl(CBuf* out_stream, uint32_t switch_id, SwitchMode mode) {
+
+  cbuf_push(out_stream, mode);
+  cbuf_push(out_stream, switch_id);
+  cbuf_push(out_stream, 32); // reset command
+
+  for (unsigned int i = 0; i < 500; ++i) {}
+}
+
 void marklin_dump_s88(CBuf* out_stream) {
   // dump all 5 s88 decoders
   cbuf_push(out_stream, 128+5);

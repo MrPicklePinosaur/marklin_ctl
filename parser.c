@@ -62,6 +62,49 @@ parse_command(const char* command)
     };
     return res;
   }
+  else if (strcmp(string_data(&cmd_name), "sw") == 0) {
+
+    eat_whitespace(command, &it);
+
+    int switch_id = get_number(command, &it);
+
+    eat_whitespace(command, &it);
+
+    String mode_str = get_word(command, &it);
+
+    if (strcmp(string_data(&mode_str), "S") == 0) {
+      ParserResult res = {
+        ._type = PARSER_RESULT_SWITCH,
+        ._data = {
+          .switch_control = {
+            .switch_id = switch_id,
+            .switch_mode = SWITCH_MODE_STRAIGHT
+          }
+        },
+      };
+      return res;
+    }
+    else if (strcmp(string_data(&mode_str), "C") == 0) {
+      ParserResult res = {
+        ._type = PARSER_RESULT_SWITCH,
+        ._data = {
+          .switch_control = {
+            .switch_id = switch_id,
+            .switch_mode = SWITCH_MODE_CURVED
+          }
+        },
+      };
+      return res;
+    }
+    else {
+      ParserResult res = {
+        ._type = PARSER_RESULT_ERROR,
+        ._data = {},
+      };
+      return res;
+    }
+
+  }
   else if (strcmp(string_data(&cmd_name), "q") == 0) {
 
     /* uart_printf(CONSOLE, "\r\ngot quit command"); */
