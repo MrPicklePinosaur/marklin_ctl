@@ -29,6 +29,8 @@ typedef struct {
   uint32_t sensor;
   uint32_t write;
   uint32_t read;
+  uint32_t stop_times[NUMBER_OF_TRAINS];
+  uint32_t reverse_times[NUMBER_OF_TRAINS];
 } TimerEvents;
 
 TimerEvents
@@ -39,6 +41,7 @@ timerevents_new(void)
     .sensor = 0,
     .write = 0,
     .read = 0,
+    .stop_times = {0},
   };
   return timer_events;
 }
@@ -150,17 +153,18 @@ int kmain() {
       else if (parser_result._type == PARSER_RESULT_REVERSE) {
         uint32_t train = parser_result._data.reverse.train;
 
-        uint32_t cur_speed = train_state[train];
-
         marklin_train_ctl(&out_stream, train, SPEED_STOP);
 
-        for (unsigned int i = 0; i < 10000000; ++i) {}
+        // start timer for train to reverse direction
+        timer_events.stop_times[train] = timer_value;
 
-        marklin_train_ctl(&out_stream, train, SPEED_REVERSE);
+        /* for (unsigned int i = 0; i < 10000000; ++i) {} */
 
-        for (unsigned int i = 0; i < 10000000; ++i) {}
+        /* marklin_train_ctl(&out_stream, train, SPEED_REVERSE); */
 
-        marklin_train_ctl(&out_stream, train, cur_speed);
+        /* for (unsigned int i = 0; i < 10000000; ++i) {} */
+
+        /* marklin_train_ctl(&out_stream, train, cur_speed); */
 
         uart_printf(CONSOLE, "reversing direction for train %u", train);
         ++cmd_log_length;
@@ -191,6 +195,28 @@ int kmain() {
       // backspace is pressed
       string_popc(&line);
       line_changed = true;
+    }
+
+    // reverse direction for train
+    for (unsigned int i = 0; i < NUMBER_OF_TRAINS; ++i) {
+
+      // timer for when we can reverse train
+      if (timer_events.stop_times[i] > 0) {
+        if (timer_value - timer_events.stop_times[i] > 2000000) {
+          marklin_train_ctl(&out_stream, i, SPEED_REVERSE);
+          timer_events.stop_times[i] = 0;
+          timer_events.reverse_times[i] = timer_value;
+        }
+      }
+
+      // timer for when we can set train back to original speed
+      if (timer_events.reverse_times[i] > 0) {
+        if (timer_value - timer_events.reverse_times[i] > 500000) {
+          marklin_train_ctl(&out_stream, i, train_state[i]);
+          timer_events.reverse_times[i] = 0;
+        }
+      }
+
     }
 
     if (line_changed) {
