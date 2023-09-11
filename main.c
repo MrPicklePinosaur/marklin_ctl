@@ -157,8 +157,7 @@ int kmain() {
         ++cmd_log_length;
       }
       else if (parser_result._type == PARSER_RESULT_QUIT) {
-        uart_printf(CONSOLE, "exiting... goodbye!");
-        ++cmd_log_length;
+        uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN);
         break;
       }
       else {

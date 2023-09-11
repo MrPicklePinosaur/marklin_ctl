@@ -11,3 +11,7 @@ You can inspect the .elf file (e.g., using readelf) to understand the structure 
 The .img file is a memory image of your program (generated from the .elf file), which can be deployed
 to the RPi and run.
 See the course web page for deployment instructions.
+
+## TODO
+
+- [ ] convert commands into a queue as well (currnet bug is that only or sensors and train control works (not both))
