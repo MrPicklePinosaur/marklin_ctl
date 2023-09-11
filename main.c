@@ -16,8 +16,26 @@ void fmt_time(uint64_t time) {
   unsigned int f_secs = secs % 60;
   unsigned int f_min = secs / 60;
 
-  uart_printf(CONSOLE, "\r\nTIME %u:%u:%u> ", f_min, f_secs, f_tenths);
+  uart_printf(CONSOLE, "%sTIME %u:%u:%u> ", ANSI_MOVE("0", "0"), f_min, f_secs, f_tenths);
 
+}
+
+// Keeps track of the last time each event was ran
+typedef struct {
+  // Last time the timer was updated
+  uint32_t timer;
+  // Last time the state of the sensors were dumped
+  uint32_t sensor;
+} TimerEvents;
+
+TimerEvents
+timerevents_new(void)
+{
+  TimerEvents timer_events = {
+    .timer = 0,
+    .sensor = 0,
+  };
+  return timer_events;
 }
 
 
@@ -40,19 +58,34 @@ int kmain() {
   // UART_LCRH_WLEN_HIGH | UART_LCRH_WLEN_LOW | UART_LCRH_FEN | UART_LCRH_STP2
   uart_config_and_enable(MARKLIN, 2400, 0x78);
 
+  TimerEvents timer_events = timerevents_new();
+
   uint64_t timer_value = 0;
 
   String line = string_new();
 
+  uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN);
+
   char c = 0;
+  bool line_changed = true; // flag used to decide when to redraw the line
+  uint32_t log_length = 0; // number of lines of log text we have printed out
   while (1) {
 
     timer_value = timer_get();
 
-    fmt_time(timer_value);
+    // should the timer be updated
+    if (timer_value - timer_events.timer > 10000) {
+      timer_events.timer = timer_value;
+      fmt_time(timer_value);
+    }
 
     // poll switches
-    marklin_dump_s88();
+    /* uart_printf(CONSOLE, "%s", ANSI_MOVE("1", "0")); */
+
+    if (timer_value - timer_events.sensor > 10000) {
+      timer_events.sensor = timer_value;
+      marklin_dump_s88();
+    }
 
     /* c = uart_getc(CONSOLE); */
     c = uart_getc_poll(CONSOLE);
@@ -61,9 +94,12 @@ int kmain() {
 
     if (isalnum(c) || isblank(c)) {
       string_pushc(&line, c);
+      line_changed = true;
     }
     else if (c == 0x0d) {
       // enter is pressed
+
+      uart_printf(CONSOLE, "\033[%u;0H", 3 + log_length);
 
       // parse the line
       ParserResult parser_result = parse_command(string_data(&line));
@@ -73,7 +109,8 @@ int kmain() {
         uint32_t speed = parser_result._data.train_speed.speed;
         marklin_train_ctl(train, speed);
         train_state[train] = speed;
-        uart_printf(CONSOLE, "\r\nsending command for train %u at speed %u", train, speed);
+        uart_printf(CONSOLE, "sending command for train %u at speed %u", train, speed);
+        ++log_length;
       }
       else if (parser_result._type == PARSER_RESULT_REVERSE) {
         uint32_t train = parser_result._data.reverse.train;
@@ -81,44 +118,46 @@ int kmain() {
         uint32_t cur_speed = train_state[train];
 
         marklin_train_ctl(train, SPEED_STOP);
-        uart_printf(CONSOLE, "\r\nstopped..");
 
         for (unsigned int i = 0; i < 10000000; ++i) {}
 
         marklin_train_ctl(train, SPEED_REVERSE);
-        uart_printf(CONSOLE, "\r\nreversed..");
 
         for (unsigned int i = 0; i < 10000000; ++i) {}
 
         marklin_train_ctl(train, cur_speed);
-        uart_printf(CONSOLE, "\r\nstarted..");
 
-        uart_printf(CONSOLE, "\r\nreversing direction for train %u", train);
+        uart_printf(CONSOLE, "r\nreversing direction for train %u", train);
+        ++log_length;
       }
       else if (parser_result._type == PARSER_RESULT_QUIT) {
-        uart_printf(CONSOLE, "\r\nexiting... goodbye!");
+        uart_printf(CONSOLE, "exiting... goodbye!");
+        ++log_length;
         break;
       }
       else {
-        uart_printf(CONSOLE, "\r\ninvalid command");
+        uart_printf(CONSOLE, "invalid command");
+        ++log_length;
       }
 
       string_clear(&line);
+      line_changed = true;
 
     }
     else if (c == 0x08) {
       // backspace is pressed
       string_popc(&line);
+      line_changed = true;
     }
 
-    uart_printf(CONSOLE, "\r\nmarklin> %s", string_data(&line));
-
-    uart_printf(CONSOLE, "\r\n");
-
-    for (unsigned int i = 0; i < 1000; ++i) {}
+    if (line_changed) {
+      uart_printf(CONSOLE, "%s%s", ANSI_MOVE("2", "0"), ANSI_CLEAR_LINE);
+      uart_printf(CONSOLE, "marklin> %s", string_data(&line));
+      line_changed = false;
+    }
 
     // clear screen
-    uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN);
+    /* uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN); */
 
   }
 

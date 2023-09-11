@@ -26,7 +26,7 @@ void marklin_dump_s88(void) {
   unsigned char left = uart_getc(MARKLIN);
   unsigned char right = uart_getc(MARKLIN);
 
-  uart_printf(CONSOLE, "\r\npolled %u %u", left, right);
+  /* uart_printf(CONSOLE, "\r\npolled %u %u", left, right); */
 
   for (unsigned int i = 0; i < 500; ++i) {}
 

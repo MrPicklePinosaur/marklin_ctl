@@ -18,7 +18,7 @@ parse_command(const char* command)
 
   String cmd_name = get_word(command, &it);
 
-  uart_printf(CONSOLE, "\r\nread %s", string_data(&cmd_name));
+  /* uart_printf(CONSOLE, "\r\nread %s", string_data(&cmd_name)); */
 
   if (strcmp(string_data(&cmd_name), "tr") == 0) {
 
@@ -30,7 +30,7 @@ parse_command(const char* command)
 
     int speed = get_number(command, &it);
 
-    uart_printf(CONSOLE, "\r\ngot tr command train = %d, speed = %d", train, speed);
+    /* uart_printf(CONSOLE, "\r\ngot tr command train = %d, speed = %d", train, speed); */
 
     ParserResult res = {
       ._type = PARSER_RESULT_TRAIN_SPEED,
@@ -50,7 +50,7 @@ parse_command(const char* command)
 
     int train = get_number(command, &it);
 
-    uart_printf(CONSOLE, "\r\ngot rv command train = %d", train);
+    /* uart_printf(CONSOLE, "\r\ngot rv command train = %d", train); */
 
     ParserResult res = {
       ._type = PARSER_RESULT_REVERSE,
@@ -64,7 +64,7 @@ parse_command(const char* command)
   }
   else if (strcmp(string_data(&cmd_name), "q") == 0) {
 
-    uart_printf(CONSOLE, "\r\ngot quit command");
+    /* uart_printf(CONSOLE, "\r\ngot quit command"); */
 
     ParserResult res = {
       ._type = PARSER_RESULT_QUIT,
