@@ -12,6 +12,9 @@
 static const char* TIME_ANCHOR = "\033[27;5H";
 static const char* PROMPT_ANCHOR = "\033[27;5H";
 static const char* SENSORS_ANCHOR = "\033[10;62H";
+
+static const unsigned int CONSOLE_MAX_LINES = 16;
+static const unsigned int SENSOR_LOG_MAX_ENTRIES = 35;
                                                    
 // Formats system time into human readable string
 void fmt_time(uint64_t time) {
@@ -22,7 +25,7 @@ void fmt_time(uint64_t time) {
   unsigned int f_min = secs / 60;
 
   uart_printf(CONSOLE, "\033[8;%uH        ", 79-8);
-  uart_printf(CONSOLE, "\033[8;%uH%u:%u:%u", 79-8, f_min, f_secs, f_tenths);
+  uart_printf(CONSOLE, "\033[8;%uH%u:%u:%u0", 79-8, f_min, f_secs, f_tenths);
 
 }
 
@@ -125,7 +128,7 @@ int kmain() {
     timer_value = timer_get();
 
     // should the timer be updated
-    if (timer_value - timer_events.timer > 10000) {
+    if (timer_value - timer_events.timer > 100000) {
       timer_events.timer = timer_value;
       fmt_time(timer_value);
     }
@@ -148,8 +151,19 @@ int kmain() {
       unsigned char sensor_byte = 0;
       // if we had data
       if (uart_getc_poll(MARKLIN, &sensor_byte) == 0) {
+
+        // wipe pane if full
+        if (sensor_log_length >= SENSOR_LOG_MAX_ENTRIES) {
+          for (int i = 0; i < 7; ++i) {
+            uart_printf(CONSOLE, "\033[%u;62H                   ", 10 + i);
+          }
+          sensor_log_length = 0;
+        }
+
+
         uint8_t triggered = switchtable_write(&switch_table, 10-sensor_bytes_expecting, sensor_byte);
-        uart_printf(CONSOLE, "\033[%u;62H", 10 + sensor_log_length);
+        // max is 30
+        uart_printf(CONSOLE, "\033[%u;%uH", 10 + sensor_log_length % 7, 62 + (sensor_log_length / 7) * 4);
 
         char sensor_group[2] = {(10-sensor_bytes_expecting) / 2 + 'A', 0};
 
@@ -159,7 +173,7 @@ int kmain() {
           unsigned int sensor_num = (8-i) + (((10-sensor_bytes_expecting) % 2 == 1) ? 8 : 0); // earlier byte is high
 
           if (((triggered >> i) & 0x1) == 0x1) {
-            uart_printf(CONSOLE, "%s%u\r\n", sensor_group, sensor_num);
+            uart_printf(CONSOLE, "%s%u", sensor_group, sensor_num);
             ++sensor_log_length;
           }
         }
@@ -174,6 +188,14 @@ int kmain() {
     }
     else if (c == 0x0d) {
       // enter is pressed
+
+      // wipe terminal if we fill up terminal
+      if (cmd_log_length >= CONSOLE_MAX_LINES) {
+        for (int i = 0; i < CONSOLE_MAX_LINES; ++i) {
+          uart_printf(CONSOLE, "\033[%u;2H                                                          ", 10 + i);
+        }
+        cmd_log_length = 0;
+      }
 
       uart_printf(CONSOLE, "\033[%u;2H", 10 + cmd_log_length);
 
@@ -241,7 +263,7 @@ int kmain() {
 
       // timer for when we can reverse train
       if (timer_events.stop_times[i] > 0) {
-        if (timer_value - timer_events.stop_times[i] > 2000000) {
+        if (timer_value - timer_events.stop_times[i] > 500000) {
           marklin_train_ctl(&out_stream, i, SPEED_REVERSE);
           timer_events.stop_times[i] = 0;
           timer_events.reverse_times[i] = timer_value;
