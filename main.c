@@ -9,15 +9,18 @@
 
 #define NUMBER_OF_TRAINS 80
 
+static const char* PROMPT_ANCHOR = "\033[25;5H";
+static const char* SENSORS_ANCHOR = "\033[8;62H";
+                                                   
 // Formats system time into human readable string
 void fmt_time(uint64_t time) {
   
-  unsigned int f_tenths = time % 1000000 / 10000;
+  unsigned int f_tenths = time % 1000000 / 100000;
   unsigned int secs = time / 1000000;
   unsigned int f_secs = secs % 60;
   unsigned int f_min = secs / 60;
 
-  uart_printf(CONSOLE, "%sTIME [%u] %u:%u:%u ", ANSI_MOVE("0", "0"), time, f_min, f_secs, f_tenths);
+  uart_printf(CONSOLE, "%sTIME [%u] %u:%u:%u0 ", ANSI_MOVE("0", "0"), time, f_min, f_secs, f_tenths);
 
 }
 
@@ -73,7 +76,38 @@ int kmain() {
 
   String line = string_new();
 
-  uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN);
+  uart_printf(CONSOLE, "%s%s%s", ANSI_CLEAR, ANSI_ORIGIN, ANSI_HIDE);
+
+  // print a cool banner
+  uart_printf(CONSOLE, "\r\n");
+  uart_printf(CONSOLE, "     ~~~~ ____   |~~~~~~~~~~~~~|   |~~~~~~~~~~~~~|   |~~~~~~~~~~~~~|\r\n");
+  uart_printf(CONSOLE, "    Y_,___|[]|   | MARKLIN CTL |   |  CS452 F23  |   | Daniel  Liu |\r\n");
+  uart_printf(CONSOLE, "   {|_|_|_|PU|_,_|_____________|-,-|_____________|-,-|_____________|\r\n");
+  uart_printf(CONSOLE, "  //oo---OO=OO     OOO     OOO       000     000       000     000  \r\n");
+  uart_printf(CONSOLE, "\r\n");
+  uart_printf(CONSOLE, "╭─[console]────────────────────────────────────────────────┬─[sensors]──────────╮\r\n");
+  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
+  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
+  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
+  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
+  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
+  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
+  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
+  uart_printf(CONSOLE, "│                                                          ├─[switches]─────────┤\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 01 X     12 X      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 02 X     13 X      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 03 X     14 X      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 04 X     15 X      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 05 X     16 X      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 06 X     17 X      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 07 X     18 X      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 08 X               │\r\n");
+  uart_printf(CONSOLE, "│╭────────────────────────────────────────────────────────╮│ 09 X               │\r\n");
+  uart_printf(CONSOLE, "││>                                                       ││ 10 X               │\r\n");
+  uart_printf(CONSOLE, "│╰────────────────────────────────────────────────────────╯│ 11 X               │\r\n");
+  uart_printf(CONSOLE, "╰──────────────────────────────────────────────────────────┴────────────────────╯\r\n");
+
+  // 80 wide, console goes up to 60
 
   bool line_changed = true; // flag used to decide when to redraw the line
   uint32_t cmd_log_length = 0; // number of lines of command log text we have printed out
@@ -111,7 +145,7 @@ int kmain() {
       // if we had data
       if (uart_getc_poll(MARKLIN, &sensor_byte) == 0) {
         uint8_t triggered = switchtable_write(&switch_table, 10-sensor_bytes_expecting, sensor_byte);
-        uart_printf(CONSOLE, "\033[%u;0H", 25 + sensor_log_length);
+        uart_printf(CONSOLE, "\033[%u;62H", 8 + sensor_log_length);
 
         char sensor_group[2] = {(10-sensor_bytes_expecting) / 2 + 'A', 0};
 
@@ -126,7 +160,7 @@ int kmain() {
           }
         }
         --sensor_bytes_expecting;
-        uart_printf(CONSOLE, "\033[20;0H\033[K sensor bytes %u, got %u", sensor_bytes_expecting, sensor_byte);
+        /* uart_printf(CONSOLE, "\033[20;0H\033[K sensor bytes %u, got %u", sensor_bytes_expecting, sensor_byte); */
       }
     }
 
@@ -137,7 +171,7 @@ int kmain() {
     else if (c == 0x0d) {
       // enter is pressed
 
-      uart_printf(CONSOLE, "\033[%u;0H", 3 + cmd_log_length);
+      uart_printf(CONSOLE, "\033[%u;2H", 8 + cmd_log_length);
 
       // parse the line
       ParserResult parser_result = parse_command(string_data(&line));
@@ -157,14 +191,6 @@ int kmain() {
 
         // start timer for train to reverse direction
         timer_events.stop_times[train] = timer_value;
-
-        /* for (unsigned int i = 0; i < 10000000; ++i) {} */
-
-        /* marklin_train_ctl(&out_stream, train, SPEED_REVERSE); */
-
-        /* for (unsigned int i = 0; i < 10000000; ++i) {} */
-
-        /* marklin_train_ctl(&out_stream, train, cur_speed); */
 
         uart_printf(CONSOLE, "reversing direction for train %u", train);
         ++cmd_log_length;
@@ -220,8 +246,8 @@ int kmain() {
     }
 
     if (line_changed) {
-      uart_printf(CONSOLE, "%s%s", ANSI_MOVE("2", "0"), ANSI_CLEAR_LINE);
-      uart_printf(CONSOLE, "marklin> %s", string_data(&line));
+      uart_printf(CONSOLE, "%s                                                      ", PROMPT_ANCHOR);
+      uart_printf(CONSOLE, "%s%s", PROMPT_ANCHOR, string_data(&line));
       line_changed = false;
     }
 
