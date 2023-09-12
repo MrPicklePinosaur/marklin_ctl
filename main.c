@@ -9,8 +9,9 @@
 
 #define NUMBER_OF_TRAINS 80
 
-static const char* PROMPT_ANCHOR = "\033[25;5H";
-static const char* SENSORS_ANCHOR = "\033[8;62H";
+static const char* TIME_ANCHOR = "\033[27;5H";
+static const char* PROMPT_ANCHOR = "\033[27;5H";
+static const char* SENSORS_ANCHOR = "\033[10;62H";
                                                    
 // Formats system time into human readable string
 void fmt_time(uint64_t time) {
@@ -20,7 +21,8 @@ void fmt_time(uint64_t time) {
   unsigned int f_secs = secs % 60;
   unsigned int f_min = secs / 60;
 
-  uart_printf(CONSOLE, "%sTIME [%u] %u:%u:%u0 ", ANSI_MOVE("0", "0"), time, f_min, f_secs, f_tenths);
+  uart_printf(CONSOLE, "\033[8;%uH        ", 79-8);
+  uart_printf(CONSOLE, "\033[8;%uH%u:%u:%u", 79-8, f_min, f_secs, f_tenths);
 
 }
 
@@ -85,7 +87,9 @@ int kmain() {
   uart_printf(CONSOLE, "   {|_|_|_|PU|_,_|_____________|-,-|_____________|-,-|_____________|\r\n");
   uart_printf(CONSOLE, "  //oo---OO=OO     OOO     OOO       000     000       000     000  \r\n");
   uart_printf(CONSOLE, "\r\n");
-  uart_printf(CONSOLE, "╭─[console]────────────────────────────────────────────────┬─[sensors]──────────╮\r\n");
+  uart_printf(CONSOLE, "╭───────────────────────────────────────────────────────────────────────────────╮\r\n");
+  uart_printf(CONSOLE, "│ ○ ○ ○                            MARKLIN CTL                                  │\r\n");
+  uart_printf(CONSOLE, "├─[console]────────────────────────────────────────────────┬─[sensors]──────────┤\r\n");
   uart_printf(CONSOLE, "│                                                          │                    │\r\n");
   uart_printf(CONSOLE, "│                                                          │                    │\r\n");
   uart_printf(CONSOLE, "│                                                          │                    │\r\n");
@@ -94,17 +98,17 @@ int kmain() {
   uart_printf(CONSOLE, "│                                                          │                    │\r\n");
   uart_printf(CONSOLE, "│                                                          │                    │\r\n");
   uart_printf(CONSOLE, "│                                                          ├─[switches]─────────┤\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 01 X     12 X      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 02 X     13 X      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 03 X     14 X      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 04 X     15 X      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 05 X     16 X      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 06 X     17 X      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 07 X     18 X      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 08 X               │\r\n");
-  uart_printf(CONSOLE, "│╭────────────────────────────────────────────────────────╮│ 09 X               │\r\n");
-  uart_printf(CONSOLE, "││>                                                       ││ 10 X               │\r\n");
-  uart_printf(CONSOLE, "│╰────────────────────────────────────────────────────────╯│ 11 X               │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 01 .     12 .      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 02 .     13 .      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 03 .     14 .      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 04 .     15 .      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 05 .     16 .      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 06 .     17 .      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 07 .     18 .      │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 08 .               │\r\n");
+  uart_printf(CONSOLE, "│╭────────────────────────────────────────────────────────╮│ 09 .               │\r\n");
+  uart_printf(CONSOLE, "││>                                                       ││ 10 .               │\r\n");
+  uart_printf(CONSOLE, "│╰────────────────────────────────────────────────────────╯│ 11 .               │\r\n");
   uart_printf(CONSOLE, "╰──────────────────────────────────────────────────────────┴────────────────────╯\r\n");
 
   // 80 wide, console goes up to 60
@@ -145,7 +149,7 @@ int kmain() {
       // if we had data
       if (uart_getc_poll(MARKLIN, &sensor_byte) == 0) {
         uint8_t triggered = switchtable_write(&switch_table, 10-sensor_bytes_expecting, sensor_byte);
-        uart_printf(CONSOLE, "\033[%u;62H", 8 + sensor_log_length);
+        uart_printf(CONSOLE, "\033[%u;62H", 10 + sensor_log_length);
 
         char sensor_group[2] = {(10-sensor_bytes_expecting) / 2 + 'A', 0};
 
@@ -155,7 +159,7 @@ int kmain() {
           unsigned int sensor_num = (8-i) + (((10-sensor_bytes_expecting) % 2 == 1) ? 8 : 0); // earlier byte is high
 
           if (((triggered >> i) & 0x1) == 0x1) {
-            uart_printf(CONSOLE, "%s:%u\r\n", sensor_group, sensor_num);
+            uart_printf(CONSOLE, "%s%u\r\n", sensor_group, sensor_num);
             ++sensor_log_length;
           }
         }
@@ -171,7 +175,7 @@ int kmain() {
     else if (c == 0x0d) {
       // enter is pressed
 
-      uart_printf(CONSOLE, "\033[%u;2H", 8 + cmd_log_length);
+      uart_printf(CONSOLE, "\033[%u;2H", 10 + cmd_log_length);
 
       // parse the line
       ParserResult parser_result = parse_command(string_data(&line));
@@ -203,6 +207,15 @@ int kmain() {
 
         uart_printf(CONSOLE, "setting switch %u to mode %u", switch_id, switch_mode);
         ++cmd_log_length;
+
+        // update UI
+        uart_printf(CONSOLE, "\033[%u;%uH", 18 + (switch_id-1) % 11, 65 + ((((switch_id-1) / 11) == 0) ? 0 : 9));
+        if (switch_mode == SWITCH_MODE_CURVED) {
+          uart_printf(CONSOLE, "C");
+        } else {
+          uart_printf(CONSOLE, "S");
+        }
+
       }
       else if (parser_result._type == PARSER_RESULT_QUIT) {
         uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN);
