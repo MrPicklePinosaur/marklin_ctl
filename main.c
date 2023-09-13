@@ -6,28 +6,14 @@
 #include "parser.h"
 #include "string.h"
 #include "cbuf.h"
+#include "ui.h"
 
 #define NUMBER_OF_TRAINS 80
 
-static const char* TIME_ANCHOR = "\033[27;5H";
-static const char* PROMPT_ANCHOR = "\033[27;5H";
-static const char* SENSORS_ANCHOR = "\033[10;62H";
-
-static const unsigned int CONSOLE_MAX_LINES = 16;
-static const unsigned int SENSOR_LOG_MAX_ENTRIES = 35;
-                                                   
-// Formats system time into human readable string
-void fmt_time(uint64_t time) {
-  
-  unsigned int f_tenths = time % 1000000 / 100000;
-  unsigned int secs = time / 1000000;
-  unsigned int f_secs = secs % 60;
-  unsigned int f_min = secs / 60;
-
-  uart_printf(CONSOLE, "\033[8;%uH        ", 79-8);
-  uart_printf(CONSOLE, "\033[8;%uH%u:%u:%u0", 79-8, f_min, f_secs, f_tenths);
-
-}
+#define T_TIMER  100000
+#define T_SENSOR 100000 
+#define T_WRITE 100000
+#define T_READ 100000 
 
 // Keeps track of the last time each event was ran
 typedef struct {
@@ -39,17 +25,20 @@ typedef struct {
   uint32_t read;
   uint32_t stop_times[NUMBER_OF_TRAINS];
   uint32_t reverse_times[NUMBER_OF_TRAINS];
+  uint32_t dev; // used for debugging
 } TimerEvents;
 
 TimerEvents
 timerevents_new(void)
 {
+  // stagger timers to avoid long loop when program starts
   TimerEvents timer_events = {
-    .timer = 0,
-    .sensor = 0,
-    .write = 0,
-    .read = 0,
+    .timer = 100,
+    .sensor = 200,
+    .write = 300,
+    .read = 400,
     .stop_times = {0},
+    .dev = 0,
   };
   return timer_events;
 }
@@ -81,38 +70,9 @@ int kmain() {
 
   String line = string_new();
 
-  uart_printf(CONSOLE, "%s%s%s", ANSI_CLEAR, ANSI_ORIGIN, ANSI_HIDE);
+  setup_ui();
 
-  // print a cool banner
-  uart_printf(CONSOLE, "\r\n");
-  uart_printf(CONSOLE, "     ~~~~ ____   |~~~~~~~~~~~~~|   |~~~~~~~~~~~~~|   |~~~~~~~~~~~~~|\r\n");
-  uart_printf(CONSOLE, "    Y_,___|[]|   | MARKLIN CTL |   |  CS452 F23  |   | Daniel  Liu |\r\n");
-  uart_printf(CONSOLE, "   {|_|_|_|PU|_,_|_____________|-,-|_____________|-,-|_____________|\r\n");
-  uart_printf(CONSOLE, "  //oo---OO=OO     OOO     OOO       000     000       000     000  \r\n");
-  uart_printf(CONSOLE, "\r\n");
-  uart_printf(CONSOLE, "╭───────────────────────────────────────────────────────────────────────────────╮\r\n");
-  uart_printf(CONSOLE, "│ ○ ○ ○                            MARKLIN CTL                                  │\r\n");
-  uart_printf(CONSOLE, "├─[console]────────────────────────────────────────────────┬─[sensors]──────────┤\r\n");
-  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
-  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
-  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
-  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
-  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
-  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
-  uart_printf(CONSOLE, "│                                                          │                    │\r\n");
-  uart_printf(CONSOLE, "│                                                          ├─[switches]─────────┤\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 01 .     12 .      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 02 .     13 .      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 03 .     14 .      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 04 .     15 .      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 05 .     16 .      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 06 .     17 .      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 07 .     18 .      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 08 .               │\r\n");
-  uart_printf(CONSOLE, "│╭────────────────────────────────────────────────────────╮│ 09 .               │\r\n");
-  uart_printf(CONSOLE, "││>                                                       ││ 10 .               │\r\n");
-  uart_printf(CONSOLE, "│╰────────────────────────────────────────────────────────╯│ 11 .               │\r\n");
-  uart_printf(CONSOLE, "╰──────────────────────────────────────────────────────────┴────────────────────╯\r\n");
+  draw_static_ui();
 
   // 80 wide, console goes up to 60
 
@@ -121,6 +81,8 @@ int kmain() {
   uint32_t sensor_log_length = 0; // number of lines of sensor log text we have printed out
   uint32_t sensor_bytes_expecting = 0; // number of bytes we are expecting to read from sensors
 
+  uint32_t worst_main_loop_time = 0; // used for timing the runtime of the main loop
+
   CBuf out_stream = cbuf_new();
 
   while (1) {
@@ -128,13 +90,13 @@ int kmain() {
     timer_value = timer_get();
 
     // should the timer be updated
-    if (timer_value - timer_events.timer > 100000) {
+    if (timer_value - timer_events.timer > T_TIMER) {
       timer_events.timer = timer_value;
-      fmt_time(timer_value);
+      draw_time(timer_value);
     }
 
     // poll switches
-    if (timer_value - timer_events.sensor > 1000000 && sensor_bytes_expecting == 0) {
+    if (timer_value - timer_events.sensor > T_SENSOR && sensor_bytes_expecting == 0) {
       timer_events.sensor = timer_value;
       marklin_dump_s88(&out_stream);
       sensor_bytes_expecting = 10; // 5 sensors with 2 bytes each
@@ -145,7 +107,7 @@ int kmain() {
     uart_getc_poll(CONSOLE, &c);
 
     // check if sensors has a byte
-    if (timer_value - timer_events.read > 100000 && sensor_bytes_expecting > 0) {
+    if (timer_value - timer_events.read > T_READ && sensor_bytes_expecting > 0) {
       timer_events.read = timer_value;
 
       unsigned char sensor_byte = 0;
@@ -154,16 +116,12 @@ int kmain() {
 
         // wipe pane if full
         if (sensor_log_length >= SENSOR_LOG_MAX_ENTRIES) {
-          for (int i = 0; i < 7; ++i) {
-            uart_printf(CONSOLE, "\033[%u;62H                   ", 10 + i);
-          }
+          clear_sensor_window();
           sensor_log_length = 0;
         }
 
-
         uint8_t triggered = switchtable_write(&switch_table, 10-sensor_bytes_expecting, sensor_byte);
-        // max is 30
-        uart_printf(CONSOLE, "\033[%u;%uH", 10 + sensor_log_length % 7, 62 + (sensor_log_length / 7) * 4);
+        
 
         char sensor_group[2] = {(10-sensor_bytes_expecting) / 2 + 'A', 0};
 
@@ -173,6 +131,7 @@ int kmain() {
           unsigned int sensor_num = (8-i) + (((10-sensor_bytes_expecting) % 2 == 1) ? 8 : 0); // earlier byte is high
 
           if (((triggered >> i) & 0x1) == 0x1) {
+            uart_printf(CONSOLE, "\033[%u;%uH", 10 + sensor_log_length % 7, 62 + (sensor_log_length / 7) * 4);
             uart_printf(CONSOLE, "%s%u", sensor_group, sensor_num);
             ++sensor_log_length;
           }
@@ -191,9 +150,7 @@ int kmain() {
 
       // wipe terminal if we fill up terminal
       if (cmd_log_length >= CONSOLE_MAX_LINES) {
-        for (int i = 0; i < CONSOLE_MAX_LINES; ++i) {
-          uart_printf(CONSOLE, "\033[%u;2H                                                          ", 10 + i);
-        }
+        clear_command_window();
         cmd_log_length = 0;
       }
 
@@ -281,15 +238,12 @@ int kmain() {
     }
 
     if (line_changed) {
-      uart_printf(CONSOLE, "%s                                                      ", PROMPT_ANCHOR);
-      uart_printf(CONSOLE, "%s%s", PROMPT_ANCHOR, string_data(&line));
+      draw_prompt(string_data(&line));
       line_changed = false;
     }
 
-    /* uart_printf(CONSOLE, "\033[30;0H\033[K cbuf len %u", cbuf_len(&out_stream)); */
-
-    // write to MARKLIN if we can
-    if (timer_value - timer_events.write > 1000) {
+    // write to MARKLIN if we can (1ms delay)
+    if (timer_value - timer_events.write > T_WRITE) {
       timer_events.write = timer_value;
       if (cbuf_len(&out_stream) > 0) {
         uint8_t byte = cbuf_front(&out_stream);
@@ -297,7 +251,16 @@ int kmain() {
       }
     }
 
-
+    uint64_t end_timer_value = timer_get();
+    uint64_t main_loop_time = end_timer_value - timer_value;
+    if (main_loop_time > worst_main_loop_time) {
+      worst_main_loop_time = main_loop_time;
+      uart_printf(CONSOLE, "\033[31;0Hworst main loop time: %u", worst_main_loop_time);
+    }
+    if (timer_value - timer_events.dev > 100000) {
+      timer_events.dev = timer_value;
+      uart_printf(CONSOLE, "\033[30;0H%smain loop time: %u", ANSI_CLEAR_LINE, main_loop_time);
+    }
 
   }
 
