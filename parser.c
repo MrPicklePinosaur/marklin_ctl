@@ -105,6 +105,20 @@ parse_command(const char* command)
     }
 
   }
+  else if (strcmp(string_data(&cmd_name), "go") == 0) {
+    ParserResult res = {
+      ._type = PARSER_RESULT_GO,
+      ._data = {}
+    };
+    return res;
+  }
+  else if (strcmp(string_data(&cmd_name), "stop") == 0) {
+    ParserResult res = {
+      ._type = PARSER_RESULT_STOP,
+      ._data = {}
+    };
+    return res;
+  }
   else if (strcmp(string_data(&cmd_name), "q") == 0) {
 
     /* uart_printf(CONSOLE, "\r\ngot quit command"); */

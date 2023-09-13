@@ -24,6 +24,8 @@ typedef enum {
 void marklin_train_ctl(CBuf* out_stream, uint32_t train, uint32_t speed);
 void marklin_switch_ctl(CBuf* out_stream, uint32_t switch_id, SwitchMode mode);
 void marklin_dump_s88(CBuf* out_stream);
+void marklin_go(CBuf* out_stream);
+void marklin_stop(CBuf* out_stream);
 
 typedef struct {
   uint8_t _data[10];

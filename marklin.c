@@ -1,45 +1,29 @@
 #include "marklin.h"
 #include "rpi.h"
 
-// Read the state of all the detectors on the track
-/*
-uint32_t s88_get(void) {
-
-}
-*/
-
 void marklin_train_ctl(CBuf* out_stream, uint32_t train, uint32_t speed) {
-  /* const char cmd[2] = {(char)speed, (char)train}; */
-  /* uart_puts(MARKLIN, cmd); */
   cbuf_push(out_stream, speed);
   cbuf_push(out_stream, train);
-
-  // TODO temp delay
-  for (unsigned int i = 0; i < 500; ++i) {}
 }
 
 void marklin_switch_ctl(CBuf* out_stream, uint32_t switch_id, SwitchMode mode) {
-
   cbuf_push(out_stream, mode);
   cbuf_push(out_stream, switch_id);
   cbuf_push(out_stream, 32); // reset command
+}
 
-  for (unsigned int i = 0; i < 500; ++i) {}
+void marklin_stop(CBuf* out_stream) {
+  cbuf_push(out_stream, 97);
+  cbuf_push(out_stream, 97);
+}
+
+void marklin_go(CBuf* out_stream) {
+  cbuf_push(out_stream, 96);
+  cbuf_push(out_stream, 96);
 }
 
 void marklin_dump_s88(CBuf* out_stream) {
-  // dump all 5 s88 decoders
   cbuf_push(out_stream, 128+5);
-
-  /* uart_putc(MARKLIN, (unsigned char)192+1); */
-
-  for (unsigned int i = 0; i < 500; ++i) {}
-
-  /* unsigned char left = uart_getc(MARKLIN); */
-  /* unsigned char right = uart_getc(MARKLIN); */
-
-  /* uart_printf(CONSOLE, "\033[20;0H\033[K polled %u %u", left, right); */
-
 }
 
 SwitchTable

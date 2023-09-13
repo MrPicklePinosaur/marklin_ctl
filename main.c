@@ -196,6 +196,16 @@ int kmain() {
         }
 
       }
+      else if (parser_result._type == PARSER_RESULT_STOP) {
+        marklin_stop(&out_stream);
+        uart_printf(CONSOLE, "stopping marklin");
+        ++cmd_log_length;
+      }
+      else if (parser_result._type == PARSER_RESULT_GO) {
+        marklin_go(&out_stream);
+        uart_printf(CONSOLE, "starting marklin");
+        ++cmd_log_length;
+      }
       else if (parser_result._type == PARSER_RESULT_QUIT) {
         uart_printf(CONSOLE, "%s%s", ANSI_CLEAR, ANSI_ORIGIN);
         break;
