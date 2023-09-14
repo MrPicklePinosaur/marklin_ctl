@@ -37,10 +37,10 @@ draw_static_ui(void)
   uart_printf(CONSOLE, "│                                                          │ 05 .     16 .      │\r\n");
   uart_printf(CONSOLE, "│                                                          │ 06 .     17 .      │\r\n");
   uart_printf(CONSOLE, "│                                                          │ 07 .     18 .      │\r\n");
-  uart_printf(CONSOLE, "│                                                          │ 08 .               │\r\n");
-  uart_printf(CONSOLE, "│╭────────────────────────────────────────────────────────╮│ 09 .               │\r\n");
-  uart_printf(CONSOLE, "││>                                                       ││ 10 .               │\r\n");
-  uart_printf(CONSOLE, "│╰────────────────────────────────────────────────────────╯│ 11 .               │\r\n");
+  uart_printf(CONSOLE, "│                                                          │ 08 .    153 .      │\r\n");
+  uart_printf(CONSOLE, "│╭────────────────────────────────────────────────────────╮│ 09 .    154 .      │\r\n");
+  uart_printf(CONSOLE, "││>                                                       ││ 10 .    155 .      │\r\n");
+  uart_printf(CONSOLE, "│╰────────────────────────────────────────────────────────╯│ 11 .    156 .      │\r\n");
   uart_printf(CONSOLE, "╰──────────────────────────────────────────────────────────┴────────────────────╯\r\n");
 }
 
@@ -75,6 +75,18 @@ draw_prompt(const char* prompt)
 }
 
 void
+draw_switch(uint32_t switch_id, char mode) {
+
+  char mode_text[] = {mode, 0};
+
+  if (switch_id <= 18)
+    uart_printf(CONSOLE, "\033[%u;%uH%s", 18 + (switch_id-1) % 11, 65 + ((((switch_id-1) / 11) == 0) ? 0 : 9), mode_text);
+
+  else if (153 <= switch_id && switch_id <= 156)
+    uart_printf(CONSOLE, "\033[%u;%uH%s", 25 + switch_id-153, 74, mode_text);
+}
+
+void
 clear_command_window(void)
 {
   for (unsigned int i = 0; i < CONSOLE_MAX_LINES; ++i) {
@@ -90,3 +102,4 @@ clear_sensor_window(void)
     uart_printf(CONSOLE, "\033[%u;62H                   ", 10 + i);
   }
 }
+

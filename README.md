@@ -112,5 +112,8 @@ track of each trains speed. The table is updated only by the `tr` command.
 
 ## TODO
 
-- [ ] Handle switches in middle of track
+- [x] Handle switches in middle of track
+- [ ] Initalize all trains to speed zero
+- [ ] add support for functions like lights and horn
+- [ ] validation for commands
 

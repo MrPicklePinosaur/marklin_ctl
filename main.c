@@ -11,9 +11,9 @@
 #define NUMBER_OF_TRAINS 80
 
 #define T_TIMER  100000
-#define T_SENSOR 100000 
+#define T_SENSOR 50000
 #define T_WRITE 100000
-#define T_READ 30000 
+#define T_READ 50000 
 
 // Keeps track of the last time each event was ran
 typedef struct {
@@ -188,11 +188,10 @@ int kmain() {
         ++cmd_log_length;
 
         // update UI
-        uart_printf(CONSOLE, "\033[%u;%uH", 18 + (switch_id-1) % 11, 65 + ((((switch_id-1) / 11) == 0) ? 0 : 9));
         if (switch_mode == SWITCH_MODE_CURVED) {
-          uart_printf(CONSOLE, "C");
+          draw_switch(switch_id, 'C');
         } else {
-          uart_printf(CONSOLE, "S");
+          draw_switch(switch_id, 'S');
         }
 
       }
