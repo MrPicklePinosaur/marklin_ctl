@@ -13,7 +13,7 @@
 #define T_TIMER  100000
 #define T_SENSOR 100000 
 #define T_WRITE 100000
-#define T_READ 100000 
+#define T_READ 30000 
 
 // Keeps track of the last time each event was ran
 typedef struct {
