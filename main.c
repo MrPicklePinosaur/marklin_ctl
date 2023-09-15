@@ -11,9 +11,9 @@
 #define NUMBER_OF_TRAINS 80
 
 #define T_TIMER     100000
-#define T_SENSOR    50000
+#define T_SENSOR    10000
 #define T_WRITE     100000
-#define T_READ      50000 
+#define T_READ      10000 
 
 #define TRAIN_SPEED_MASK     0b01111
 #define TRAIN_LIGHTS_MASK    0b10000
@@ -29,6 +29,7 @@ typedef struct {
   uint32_t stop_times[NUMBER_OF_TRAINS];
   uint32_t reverse_times[NUMBER_OF_TRAINS];
   uint32_t dev; // used for debugging
+  uint32_t sensor_timer; // used for timing how long an entire sensor fetch operation takes
 } TimerEvents;
 
 TimerEvents
@@ -42,6 +43,7 @@ timerevents_new(void)
     .read = T_WRITE/2,
     .stop_times = {0},
     .dev = 0,
+    .sensor_timer = 0,
   };
   return timer_events;
 }
@@ -85,6 +87,7 @@ int kmain() {
   uint32_t sensor_bytes_expecting = 0; // number of bytes we are expecting to read from sensors
 
   uint32_t worst_main_loop_time = 0; // used for timing the runtime of the main loop
+  uint32_t worst_sensor_time = 0; // used for timing the runtime of a sensor query
 
   CBuf out_stream = cbuf_new();
 
@@ -100,6 +103,7 @@ int kmain() {
 
     // poll switches
     if (timer_value - timer_events.sensor > T_SENSOR && sensor_bytes_expecting == 0) {
+      timer_events.sensor_timer = timer_get();
       timer_events.sensor = timer_value;
       marklin_dump_s88(&out_stream);
       sensor_bytes_expecting = 10; // 5 sensors with 2 bytes each
@@ -141,7 +145,17 @@ int kmain() {
         }
         --sensor_bytes_expecting;
         /* uart_printf(CONSOLE, "\033[20;0H\033[K sensor bytes %u, got %u", sensor_bytes_expecting, sensor_byte); */
+
+        // if we are done, we can update our performance timer
+        if (sensor_bytes_expecting == 0) {
+          uint32_t sensor_time_taken = timer_get() - timer_events.sensor_timer;
+          if (sensor_time_taken > worst_sensor_time) {
+            worst_sensor_time = sensor_time_taken;
+            uart_printf(CONSOLE, "\033[32;0Hworst sensor query time: %u", worst_sensor_time);
+          }
+        }
       }
+
     }
 
     if (isalnum(c) || isblank(c)) {

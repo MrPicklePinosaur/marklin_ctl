@@ -41,6 +41,9 @@ go 0x200000
 - Sets the state of a switch. `<switch direction>` must be "S" (for straight)
   or "C" (for curved)
 
+`light <train number> <on|off>`
+- Toggle the lights on the train on and off
+
 `go`
 - Turns on the marklin
 
@@ -58,8 +61,8 @@ maximum runtime of a single interation is between 7ms and 10ms. This is still
 an order of magnitude away from interfering with our timer, which runs every
 100 ms.
 
-**TODO: get times**
-The program takes between X and Y to respond to a sensor query.
+The program takes between 150ms and 200ms to request and sensor dump and
+retrieve all bytes.
 
 ## Program Structure
 
