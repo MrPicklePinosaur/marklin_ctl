@@ -53,9 +53,10 @@ go 0x200000
 
 ## Timing
 
-**TODO: get times**
 Through extensive measurement of the main loop, it has been found that the
-maximum runtime of a single interation is between X and Y.
+maximum runtime of a single interation is between 7ms and 10ms. This is still
+an order of magnitude away from interfering with our timer, which runs every
+100 ms.
 
 **TODO: get times**
 The program takes between X and Y to respond to a sensor query.

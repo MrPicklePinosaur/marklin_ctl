@@ -10,10 +10,13 @@
 
 #define NUMBER_OF_TRAINS 80
 
-#define T_TIMER  100000
-#define T_SENSOR 50000
-#define T_WRITE 100000
-#define T_READ 50000 
+#define T_TIMER     100000
+#define T_SENSOR    50000
+#define T_WRITE     100000
+#define T_READ      50000 
+
+#define TRAIN_SPEED_MASK     0b01111
+#define TRAIN_LIGHTS_MASK    0b10000
 
 // Keeps track of the last time each event was ran
 typedef struct {
@@ -33,10 +36,10 @@ timerevents_new(void)
 {
   // stagger timers to avoid long loop when program starts
   TimerEvents timer_events = {
-    .timer = 100,
-    .sensor = 200,
-    .write = 300,
-    .read = 400,
+    .timer = T_TIMER/2,
+    .sensor = T_SENSOR/2,
+    .write = T_READ/2,
+    .read = T_WRITE/2,
     .stop_times = {0},
     .dev = 0,
   };
@@ -162,8 +165,8 @@ int kmain() {
       if (parser_result._type == PARSER_RESULT_TRAIN_SPEED) {
         uint32_t train = parser_result._data.train_speed.train;
         uint32_t speed = parser_result._data.train_speed.speed;
-        marklin_train_ctl(&out_stream, train, speed);
-        train_state[train] = speed;
+        train_state[train] = (train_state[train] & ~TRAIN_SPEED_MASK) | speed;
+        marklin_train_ctl(&out_stream, train, train_state[train]);
         uart_printf(CONSOLE, "sending command for train %u at speed %u", train, speed);
         ++cmd_log_length;
       }
@@ -193,6 +196,21 @@ int kmain() {
         } else {
           draw_switch(switch_id, 'S');
         }
+
+      }
+      else if (parser_result._type == PARSER_RESULT_LIGHTS) {
+        uint32_t train = parser_result._data.lights.train;
+
+        if (parser_result._data.lights.state) {
+          train_state[train] |= TRAIN_LIGHTS_MASK;
+          uart_printf(CONSOLE, "turning lights on for train %u", train);
+          ++cmd_log_length;
+        } else {
+          train_state[train] &= ~TRAIN_LIGHTS_MASK;
+          uart_printf(CONSOLE, "turning lights off for train %u", train);
+          ++cmd_log_length;
+        }
+        marklin_train_ctl(&out_stream, train, train_state[train]);
 
       }
       else if (parser_result._type == PARSER_RESULT_STOP) {

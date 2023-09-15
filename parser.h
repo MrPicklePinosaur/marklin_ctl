@@ -2,6 +2,7 @@
 #define __PARSER_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "marklin.h"
 
 typedef struct {
@@ -11,6 +12,7 @@ typedef struct {
     PARSER_RESULT_SWITCH,
     PARSER_RESULT_STOP,
     PARSER_RESULT_GO,
+    PARSER_RESULT_LIGHTS,
     PARSER_RESULT_QUIT,
     PARSER_RESULT_ERROR,
   } _type;
@@ -29,6 +31,11 @@ typedef struct {
       uint32_t switch_id;
       SwitchMode switch_mode;
     } switch_control;
+
+    struct {
+      uint32_t train;
+      bool state;
+    } lights;
 
   } _data;
 } ParserResult;

@@ -32,7 +32,7 @@ parse_command(const char* command)
 
     /* uart_printf(CONSOLE, "\r\ngot tr command train = %d, speed = %d", train, speed); */
 
-    ParserResult res = {
+    return (ParserResult) {
       ._type = PARSER_RESULT_TRAIN_SPEED,
       ._data = {
         .train_speed = {
@@ -41,7 +41,6 @@ parse_command(const char* command)
         }
       }
     };
-    return res;
 
   }
   else if (strcmp(string_data(&cmd_name), "rv") == 0) {
@@ -52,7 +51,7 @@ parse_command(const char* command)
 
     /* uart_printf(CONSOLE, "\r\ngot rv command train = %d", train); */
 
-    ParserResult res = {
+    return (ParserResult) {
       ._type = PARSER_RESULT_REVERSE,
       ._data = {
         .reverse = {
@@ -60,7 +59,6 @@ parse_command(const char* command)
         }
       }
     };
-    return res;
   }
   else if (strcmp(string_data(&cmd_name), "sw") == 0) {
 
@@ -73,7 +71,7 @@ parse_command(const char* command)
     String mode_str = get_word(command, &it);
 
     if (strcmp(string_data(&mode_str), "S") == 0) {
-      ParserResult res = {
+      return (ParserResult) {
         ._type = PARSER_RESULT_SWITCH,
         ._data = {
           .switch_control = {
@@ -82,10 +80,9 @@ parse_command(const char* command)
           }
         },
       };
-      return res;
     }
     else if (strcmp(string_data(&mode_str), "C") == 0) {
-      ParserResult res = {
+      return (ParserResult) {
         ._type = PARSER_RESULT_SWITCH,
         ._data = {
           .switch_control = {
@@ -94,47 +91,70 @@ parse_command(const char* command)
           }
         },
       };
-      return res;
     }
     else {
-      ParserResult res = {
+      return (ParserResult) {
         ._type = PARSER_RESULT_ERROR,
-        ._data = {},
       };
-      return res;
     }
 
   }
-  else if (strcmp(string_data(&cmd_name), "go") == 0) {
-    ParserResult res = {
-      ._type = PARSER_RESULT_GO,
-      ._data = {}
+  else if (strcmp(string_data(&cmd_name), "light") == 0) {
+    eat_whitespace(command, &it);
+
+    int train = get_number(command, &it);
+
+    eat_whitespace(command, &it);
+
+    String light_mode = get_word(command, &it);
+
+    if (strcmp(string_data(&light_mode), "on") == 0) {
+      return (ParserResult) {
+        ._type = PARSER_RESULT_LIGHTS,
+        ._data = {
+          .lights = {
+            .train = train,
+            .state = true,
+          }
+        },
+      };
+    } else if (strcmp(string_data(&light_mode), "off") == 0) {
+      return (ParserResult) {
+        ._type = PARSER_RESULT_LIGHTS,
+        ._data = {
+          .lights = {
+            .train = train,
+            .state = false,
+          }
+        },
+      };
+    }
+    return (ParserResult) {
+      ._type = PARSER_RESULT_ERROR,
     };
-    return res;
+  }
+  else if (strcmp(string_data(&cmd_name), "go") == 0) {
+    return (ParserResult) {
+      ._type = PARSER_RESULT_GO,
+    };
   }
   else if (strcmp(string_data(&cmd_name), "stop") == 0) {
-    ParserResult res = {
+    return (ParserResult) {
       ._type = PARSER_RESULT_STOP,
-      ._data = {}
     };
-    return res;
   }
   else if (strcmp(string_data(&cmd_name), "q") == 0) {
 
     /* uart_printf(CONSOLE, "\r\ngot quit command"); */
 
-    ParserResult res = {
+    return (ParserResult) {
       ._type = PARSER_RESULT_QUIT,
-      ._data = {}
     };
-    return res;
   }
 
-  ParserResult res = {
+  return (ParserResult) {
     ._type = PARSER_RESULT_ERROR,
-    ._data = {},
   };
-  return res;
 
 }
 
