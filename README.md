@@ -8,6 +8,12 @@ command interface for marklin train controller
 
 ## Building
 
+If you need to override some variables like `XDIR` in the make file, you can
+copy `config.mk.example` and make any modifications:
+```sh
+cp config.mk.example config.mk
+```
+
 ```sh
 make
 ```

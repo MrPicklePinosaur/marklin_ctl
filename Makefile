@@ -1,4 +1,7 @@
-XDIR:=/home/pinosaur/Installs/arm-gnu-toolchain-12.3.rel1-x86_64-aarch64-none-elf
+XDIR:=/u/cs452/public/xdev
+
+-include config.mk
+
 ARCH=cortex-a72
 TRIPLE=aarch64-none-elf
 XBINDIR:=$(XDIR)/bin
