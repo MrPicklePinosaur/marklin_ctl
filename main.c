@@ -261,7 +261,7 @@ int kmain() {
 
       // timer for when we can reverse train
       if (timer_events.stop_times[i] > 0) {
-        if (timer_value - timer_events.stop_times[i] > 500000) {
+        if (timer_value - timer_events.stop_times[i] > 1500000) {
           marklin_train_ctl(&out_stream, i, SPEED_REVERSE);
           timer_events.stop_times[i] = 0;
           timer_events.reverse_times[i] = timer_value;

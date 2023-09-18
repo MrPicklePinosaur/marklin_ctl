@@ -12,7 +12,7 @@ command interface for marklin train controller
 make
 ```
 
-This should produce iotest.elf and iotest.img. You can inspect the .elf file
+This should produce marklinctl.elf and marklinctl.img. You can inspect the .elf file
 (e.g., using readelf) to understand the structure of your compiled code. The
 .img file is a memory image of your program (generated from the .elf file),
 which can be deployed to the RPi and run. See the course web page for
@@ -61,7 +61,7 @@ maximum runtime of a single interation is between 7ms and 10ms. This is still
 an order of magnitude away from interfering with our timer, which runs every
 100 ms.
 
-The program takes between 150ms and 200ms to request and sensor dump and
+The program takes between 150ms and 300ms to request and sensor dump and
 retrieve all bytes.
 
 ## Program Structure
@@ -112,7 +112,10 @@ track of each trains speed. The table is updated only by the `tr` command.
 - Sensor names are incorrect on track B
 - Commands issued with invalid parameters may result in unexpected behavior
 - If the speed of a train has not been set using `tr` prior to a `rv` call, the
-  train will halt instead of reversing at the same speed.
+  train will halt instead of reversing at the same speed
+- In some rare cases the sensor activations don't show up in the sensor pane.
+  If so, upon quitting the program and starting it back up it should all show
+  up
 
 ## TODO
 
@@ -120,4 +123,5 @@ track of each trains speed. The table is updated only by the `tr` command.
 - [ ] Initalize all trains to speed zero
 - [ ] add support for functions like lights and horn
 - [ ] validation for commands
+- [ ] test build on waterloo linux server
 
